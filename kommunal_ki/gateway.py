@@ -3,6 +3,7 @@
 Alle Aufrufe laufen über ``LLMGateway.aufrufen``. Pro Aufruf werden Anbieter, Modell, Modellversion,
 Prompt-ID, Prompt-Version und -Hash, die verwendeten Quellen, der Datenstand sowie Hashes von Eingabe
 und Ausgabe protokolliert. Inhalte selbst werden nicht im Protokoll gespeichert (Datensparsamkeit).
+Auch fehlgeschlagene Aufrufe werden protokolliert, mit Status und Fehlerklasse.
 
 Anbieter:
 * ``LokalerExtraktiverAnbieter``: läuft ohne Modell, bildet Antworten aus Sätzen der Quellen.
@@ -55,6 +56,8 @@ class Protokolleintrag:
     datenstand_id: Optional[str]
     dauer_ms: int
     zweck: str
+    status: str = "ok"                  # "ok" oder "fehler"
+    fehlerklasse: Optional[str] = None  # nur der Name der Ausnahme; die Meldung kann Inhalte enthalten
 
 
 class Anbieter(Protocol):
@@ -170,8 +173,16 @@ class LLMGateway:
         quellen_text = "\n".join(f"[{q.nummer}] {q.titel}: {q.text}" for q in quellen)
         prompt = vorlage.fuellen(quellen=quellen_text, frage=frage)
         start = time.perf_counter()
-        ausgabe = self.anbieter.erzeugen(prompt, quellen, frage)
-        dauer = int((time.perf_counter() - start) * 1000)
+        try:
+            ausgabe = self.anbieter.erzeugen(prompt, quellen, frage)
+        except Exception as e:
+            self._protokollieren(vorlage, prompt, "", quellen, datenstand_id, zweck, start, "fehler", type(e).__name__)
+            raise
+        return ausgabe, self._protokollieren(vorlage, prompt, _h(ausgabe), quellen, datenstand_id, zweck, start)
+
+    def _protokollieren(self, vorlage: PromptVorlage, prompt: str, ausgabe_hash: str, quellen: list[Quelle],
+                        datenstand_id: Optional[str], zweck: str, start: float, status: str = "ok",
+                        fehlerklasse: Optional[str] = None) -> Protokolleintrag:
         eintrag = Protokolleintrag(
             aufruf_id=str(uuid.uuid4()),
             zeitpunkt=datetime.now(timezone.utc).isoformat(timespec="seconds"),
@@ -182,11 +193,13 @@ class LLMGateway:
             prompt_version=vorlage.version,
             prompt_hash=vorlage.hash,
             eingabe_hash=_h(prompt),
-            ausgabe_hash=_h(ausgabe),
+            ausgabe_hash=ausgabe_hash,
             quellen=[q.quelle_id for q in quellen],
             datenstand_id=datenstand_id,
-            dauer_ms=dauer,
+            dauer_ms=int((time.perf_counter() - start) * 1000),
             zweck=zweck,
+            status=status,
+            fehlerklasse=fehlerklasse,
         )
         self.protokoll.schreiben(eintrag)
-        return ausgabe, eintrag
+        return eintrag

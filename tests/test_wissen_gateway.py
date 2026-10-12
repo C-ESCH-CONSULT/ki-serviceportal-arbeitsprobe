@@ -10,6 +10,21 @@ from kommunal_ki.wissen import Wissensspeicher
 DATEN = Path(__file__).resolve().parent.parent / "data"
 
 
+class FesterAnbieter:
+    """Test-Anbieter mit fester Ausgabe oder fester Ausnahme; zählt die Aufrufe."""
+
+    name, modell, modell_version = "test", "fest", "1"
+
+    def __init__(self, ausgabe="", fehler=None):
+        self.ausgabe, self.fehler, self.aufrufe = ausgabe, fehler, 0
+
+    def erzeugen(self, prompt, quellen, frage):
+        self.aufrufe += 1
+        if self.fehler:
+            raise self.fehler
+        return self.ausgabe
+
+
 class WissenTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -62,7 +77,16 @@ class WissenTest(unittest.TestCase):
         self.assertEqual(eintrag["prompt_hash"], holen("antwort_mit_quellen").hash)
         self.assertEqual(eintrag["modell_version"], LokalerExtraktiverAnbieter.modell_version)
         self.assertEqual(eintrag["quellen"], [q["abschnitt_id"] for q in a.quellen])
+        self.assertEqual(eintrag["status"], "ok")
         self.assertNotIn("Pflegekurse", json.dumps(eintrag))  # keine Inhalte im Protokoll
+
+    def test_fehlgeschlagener_aufruf_wird_protokolliert(self):
+        gw = LLMGateway(FesterAnbieter(fehler=TimeoutError("Zeitlimit überschritten")))
+        with self.assertRaises(TimeoutError):
+            self.wissen.fragen("Was braucht man für einen Pflegestützpunkt?", gw)
+        e = gw.protokoll.eintraege[-1]
+        self.assertEqual((e.status, e.fehlerklasse, e.ausgabe_hash), ("fehler", "TimeoutError", ""))
+        self.assertTrue(e.quellen)
 
     def test_prompt_versionen_sind_abrufbar(self):
         v1, v2 = holen("antwort_mit_quellen", "1"), holen("antwort_mit_quellen", "2")

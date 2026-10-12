@@ -109,7 +109,9 @@ class PostgresProtokoll:
         with psycopg.connect(self.dsn) as con, con.cursor() as cur:
             cur.execute(
                 """INSERT INTO modellaufruf (aufruf_id, zeitpunkt, anbieter, modell, modell_version, prompt_id,
-                       prompt_version, prompt_hash, eingabe_hash, ausgabe_hash, quellen, datenstand_id, dauer_ms, zweck)
-                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
+                       prompt_version, prompt_hash, eingabe_hash, ausgabe_hash, quellen, datenstand_id, dauer_ms, zweck,
+                       status, fehlerklasse)
+                   VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)""",
                 (e.aufruf_id, e.zeitpunkt, e.anbieter, e.modell, e.modell_version, e.prompt_id, e.prompt_version,
-                 e.prompt_hash, e.eingabe_hash, e.ausgabe_hash, e.quellen, e.datenstand_id, e.dauer_ms, e.zweck))
+                 e.prompt_hash, e.eingabe_hash, e.ausgabe_hash, e.quellen, e.datenstand_id, e.dauer_ms, e.zweck,
+                 e.status, e.fehlerklasse))
