@@ -1,0 +1,13 @@
+[project]
+name = "kommunal-ki"
+version = "0.1.0"
+description = "Prototyp: Datenpipeline, Benchmark, Wissensspeicher mit Quellenangabe und Matching für ein KI-Serviceportal"
+requires-python = ">=3.11"
+authors = [{ name = "Christopher Eschenweck", email = "info@esch-consult.de" }]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"

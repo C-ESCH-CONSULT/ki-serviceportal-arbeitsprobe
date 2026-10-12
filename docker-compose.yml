@@ -1,0 +1,32 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_DB: portal
+      POSTGRES_USER: portal
+      POSTGRES_PASSWORD: portal
+    volumes:
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01_schema.sql:ro
+      - pgdaten:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portal -d portal"]
+      interval: 3s
+      retries: 20
+
+  api:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgresql://portal:portal@db:5432/portal
+      PROTOKOLL_DATEI: /app/protokoll/modellaufrufe.jsonl
+      # Optional: selbst gehostetes Modell mit OpenAI-kompatibler Schnittstelle (z. B. vLLM, Ollama)
+      # LLM_BASIS_URL: http://llm:8000
+      # LLM_MODELL: llama-3.1-8b-instruct
+      # LLM_MODELL_VERSION: "2024-07"
+    ports:
+      - "8000:8000"
+
+volumes:
+  pgdaten:

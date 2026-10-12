@@ -1,0 +1,13 @@
+kommune_id;name;typ;einwohner;anteil_80plus_pct;pflegebeduerftige_je_1000;stationaere_plaetze_je_100_80plus;beratungsstellen;ehrenamtliche_je_1000
+K01;Kommune A;Kreisstadt;34120;7,4;52,1;14,2;3;18,4
+K02;Kommune B;Kreisstadt;28940;8,9;61,7;9,8;1;11,2
+K03;Kommune C;Kreisstadt;41210;6,8;48,3;15,6;4;21,0
+K04;Kommune D;Kleinstadt;12480;9,6;66,2;7,1;1;9,4
+K05;Kommune E;Kleinstadt;9870;8,1;57,9;10,4;1;16,8
+K06;Kommune F;Kleinstadt;14320;7,7;54,0;11,9;2;14,1
+K07;Kommune G;Kleinstadt;11050;10,2;69,8;6,3;0;8,7
+K08;Kommune H;Landgemeinde;4210;9,9;63,5;5,2;0;22,6
+K09;Kommune I;Landgemeinde;3580;11,4;72,4;3,9;0;19,8
+K10;Kommune J;Landgemeinde;5140;8,3;58,6;6,8;1;25,3
+K11;Kommune K;Landgemeinde;2960;10,8;70,1;4,4;0;12,9
+K12;Kommune L;Landgemeinde;4870;8,7;60,2;7,7;0;17,5

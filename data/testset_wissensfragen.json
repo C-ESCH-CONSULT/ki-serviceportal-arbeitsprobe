@@ -1,0 +1,10 @@
+[
+  {"frage": "Was braucht man für einen Pflegestützpunkt?", "erwartete_massnahme": "M01", "muss_enthalten": ["Trägervereinbarung"]},
+  {"frage": "Wer bezahlt Pflegekurse für Angehörige?", "erwartete_massnahme": "M06", "muss_enthalten": ["Pflegekassen"]},
+  {"frage": "Wie kann eine Landgemeinde ohne Beratungsstelle beraten werden?", "erwartete_massnahme": "M02", "muss_enthalten": []},
+  {"frage": "Wie gewinnt man Ehrenamtliche für die Nachbarschaftshilfe?", "erwartete_massnahme": "M03", "muss_enthalten": ["Koordinationsstelle"]},
+  {"frage": "Was bringt eine Tagespflege?", "erwartete_massnahme": "M04", "muss_enthalten": ["stationäre"]},
+  {"frage": "Welche Wirkung hat ein Quartierskonzept?", "erwartete_massnahme": "M05", "muss_enthalten": ["Umfeld"]},
+  {"frage": "Welche Themen hat eine Veranstaltungsreihe für ältere Menschen?", "erwartete_massnahme": "M07", "muss_enthalten": ["Vorsorgevollmacht"]},
+  {"frage": "Kann Nachbarschaftshilfe über die Pflegeversicherung abgerechnet werden?", "erwartete_massnahme": "M03", "muss_enthalten": ["Entlastungsbetrag"]}
+]
