@@ -6,6 +6,7 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Optional
 
+from .abruf import Abrufer
 from .benchmark import einordnen
 from .gateway import LLMGateway, LokalerExtraktiverAnbieter, OpenAIKompatiblerAnbieter, Protokoll
 from .importer import KennzahlenImporter
@@ -42,6 +43,9 @@ class Dienst:
         stand = KennzahlenImporter(quelle, stichtag).importieren(inhalt, vorgaenger)
         self.speicher.speichern(stand)
         return stand
+
+    def abrufen(self, url: str, quelle: str, stichtag: str, abrufer: Optional[Abrufer] = None) -> Datenstand:
+        return self.importieren((abrufer or Abrufer()).holen(url), quelle, stichtag)
 
     def _stand(self, datenstand_id: Optional[str]) -> Datenstand:
         stand = self.speicher.holen(datenstand_id) if datenstand_id else self.speicher.aktuell()
