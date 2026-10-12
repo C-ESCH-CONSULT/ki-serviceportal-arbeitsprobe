@@ -2,7 +2,7 @@ import unittest
 from datetime import datetime, timezone
 from pathlib import Path
 
-from kommunal_ki.importer import KennzahlenImporter, SchemaFehler
+from kommunal_ki.importer import KennzahlenImporter, SchemaFehler, _zahl
 
 DATEN = Path(__file__).resolve().parent.parent / "data"
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -39,6 +39,19 @@ class ImporterTest(unittest.TestCase):
         self.assertIn(("K06", "format"), regeln)            # keine Zahl
         self.assertIn(("K01", "eindeutigkeit"), regeln)     # doppelte Zeile
         self.assertIn(("K07", "pflichtfeld"), regeln)       # Name fehlt
+
+    def test_deutsches_zahlenformat(self):
+        inhalt = (lesen(DATEN / "kennzahlen_2025.csv")
+                  .replace("K01;Kommune A;Kreisstadt;34120;7,4", "K01;Kommune A;Kreisstadt;34.120;7,4")
+                  .replace("K02;Kommune B;Kreisstadt;28940;8,9", "K02;Kommune B;Kreisstadt;28940;8.9"))
+        stand = KennzahlenImporter("pflegestatistik", "2025-12-31").importieren(inhalt, jetzt=JETZT)
+        self.assertEqual(stand.kommunen["K01"].werte["einwohner"], 34120)  # Punkt trennt Tausender
+        self.assertNotIn("K02", stand.kommunen)                             # "8.9" ist mehrdeutig
+        self.assertIn(("K02", "format"), {(b.kommune_id, b.regel) for b in stand.befunde})
+        self.assertEqual(_zahl("1.234,5"), 1234.5)
+        for wert in ("3.58", "3.580,", "1,234.5", "1e3", "nan"):
+            with self.subTest(wert=wert), self.assertRaises(ValueError):
+                _zahl(wert)
 
     def test_fehlende_spalte_lehnt_datei_ab(self):
         inhalt = "kommune_id;name;typ\nK01;A;Kreisstadt\n"

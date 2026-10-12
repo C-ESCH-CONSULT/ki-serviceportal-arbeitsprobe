@@ -8,6 +8,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import io
+import re
 from datetime import datetime, timezone
 from typing import Optional
 
@@ -23,8 +24,16 @@ class SchemaFehler(ValueError):
     """Die Datei passt nicht zum erwarteten Schema und wird insgesamt abgelehnt."""
 
 
+# Deutsches Zahlenformat: Punkt nur als Tausendertrenner in Dreiergruppen, Komma als Dezimaltrenner.
+_DEUTSCHE_ZAHL = re.compile(r"-?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?")
+
+
 def _zahl(text: str) -> float:
-    return float(text.strip().replace(".", "").replace(",", ".")) if "," in text else float(text.strip())
+    """Liest eine Zahl im deutschen Format. Mehrdeutiges wie '3.58' oder '7.4' wird abgelehnt."""
+    text = text.strip()
+    if not _DEUTSCHE_ZAHL.fullmatch(text):
+        raise ValueError(text)
+    return float(text.replace(".", "").replace(",", "."))
 
 
 def inhalt_hash(inhalt: str) -> str:
@@ -93,7 +102,7 @@ class KennzahlenImporter:
             try:
                 wert = _zahl(roh)
             except ValueError:
-                melden("format", "fehler", f"{name}: '{roh}' ist keine Zahl")
+                melden("format", "fehler", f"{name}: '{roh}' ist keine Zahl im deutschen Format")
                 continue
             if kz.ganzzahl and wert != int(wert):
                 melden("format", "fehler", f"{name}: ganze Zahl erwartet, '{roh}' erhalten")

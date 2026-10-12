@@ -31,7 +31,7 @@ curl http://localhost:8000/protokoll
 
 | Anforderung | Umsetzung | Datei |
 | --- | --- | --- |
-| Importer für öffentliche Quellen mit Qualitätsprüfung | Festes Schema je Quelle, Prüfregeln für Pflichtfelder, Format, Wertebereich, Eindeutigkeit und Plausibilität. Fehler verwerfen die Zeile, Hinweise werden markiert. | `kommunal_ki/importer.py` |
+| Importer für öffentliche Quellen mit Qualitätsprüfung | Festes Schema je Quelle, Prüfregeln für Pflichtfelder, Format (deutsches Zahlenformat; Mehrdeutiges wie `3.58` wird als Fehler gemeldet statt still umgedeutet), Wertebereich, Eindeutigkeit und Plausibilität. Fehler verwerfen die Zeile, Hinweise werden markiert. | `kommunal_ki/importer.py` |
 | Regelmäßige Aktualisierung, nachvollziehbare Datenstände | Jeder Import erzeugt einen unveränderlichen Datenstand mit Inhalts-Hash und Verweis auf den Vorgänger. Sprünge über 30 % gegenüber dem Vorgänger werden gemeldet. | `importer.py`, `speicher.py` |
 | Benchmark der Kommunen | Einordnung innerhalb der Vergleichsgruppe (Kreisstadt, Kleinstadt, Landgemeinde) mit Median und Perzentil, immer bezogen auf einen Datenstand. | `benchmark.py` |
 | Sprachmodelle über ein Gateway | Alle Aufrufe laufen über `LLMGateway`. Protokolliert werden Anbieter, Modell, Modellversion, Prompt-ID, Prompt-Version und -Hash, Quellen, Datenstand sowie Hashes von Ein- und Ausgabe, aber keine Inhalte. | `gateway.py` |
