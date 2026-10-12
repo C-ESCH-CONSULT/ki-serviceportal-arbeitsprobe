@@ -12,8 +12,6 @@ DATEN = Path(__file__).resolve().parent.parent / "data"
 
 
 class FesterAnbieter:
-    """Test-Anbieter mit fester Ausgabe oder fester Ausnahme; zählt die Aufrufe."""
-
     name, modell, modell_version = "test", "fest", "1"
 
     def __init__(self, ausgabe="", fehler=None):

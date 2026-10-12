@@ -39,6 +39,12 @@ class BenchmarkMatchingTest(unittest.TestCase):
             self.assertTrue(any("Median" in g for g in v.begruendung))
             self.assertIn(f"Datenstand {self.stand.datenstand_id}", v.quellen)
 
+    def test_mindestgroesse_nur_als_begruendung_wenn_vorgegeben(self):
+        for kid in self.stand.kommunen:
+            for v in vorschlagen(einordnen(self.stand, kid), self.stand, self.wissen, max_vorschlaege=10):
+                genannt = any("Mindestgröße" in g for g in v.begruendung)
+                self.assertEqual(genannt, self.wissen.massnahmen[v.massnahme_id].min_einwohner > 0, (kid, v.massnahme_id))
+
     def test_harte_regeln_werden_eingehalten(self):
         # M04 (Tagespflege) erst ab 5.000 Einwohnern, M02 nicht für Kreisstädte
         for kid in self.stand.kommunen:

@@ -29,6 +29,14 @@ class DienstTest(unittest.TestCase):
         d.importieren(inhalt, "pflegestatistik", "2025-12-31")
         self.assertEqual(len(d.speicher.alle()), 1)
 
+    def test_protokollabruf_ist_begrenzt(self):
+        d = Dienst()
+        d.fragen("Was braucht man für einen Pflegestützpunkt?")
+        self.assertEqual(len(d.protokoll(1)), 1)
+        for letzte in (0, -1, 501):
+            with self.subTest(letzte=letzte), self.assertRaises(ValueError):
+                d.protokoll(letzte)
+
 
 if __name__ == "__main__":
     unittest.main()

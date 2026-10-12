@@ -1,17 +1,4 @@
-"""LLM-Gateway mit Protokollierung jedes Modellaufrufs.
-
-Alle Aufrufe laufen über ``LLMGateway.aufrufen``. Pro Aufruf werden Anbieter, Modell, Modellversion,
-Prompt-ID, Prompt-Version und -Hash, die verwendeten Quellen, der Datenstand sowie Hashes von Eingabe
-und Ausgabe protokolliert. Inhalte selbst werden nicht im Protokoll gespeichert (Datensparsamkeit).
-Auch fehlgeschlagene Aufrufe werden protokolliert, mit Status und Fehlerklasse. Steht eine Antwort ohne
-Modell fest, weil keine passende Quelle vorliegt, protokolliert ``LLMGateway.ablehnen`` das ebenfalls.
-
-Anbieter:
-* ``LokalerExtraktiverAnbieter``: läuft ohne Modell, bildet Antworten aus Sätzen der Quellen.
-  Gut für Tests und als Rückfallebene.
-* ``OpenAIKompatiblerAnbieter``: für selbst gehostete Modelle mit OpenAI-kompatibler Schnittstelle
-  (z. B. vLLM oder Ollama im eigenen Rechenzentrum in der EU).
-"""
+"""LLM-Gateway. Jeder Modellaufruf wird protokolliert, mit Hashes statt Inhalten."""
 from __future__ import annotations
 
 import hashlib
@@ -57,8 +44,8 @@ class Protokolleintrag:
     datenstand_id: Optional[str]
     dauer_ms: int
     zweck: str
-    status: str = "ok"                  # "ok", "fehler" oder "keine_grundlage" (Modell nicht aufgerufen)
-    fehlerklasse: Optional[str] = None  # nur der Name der Ausnahme; die Meldung kann Inhalte enthalten
+    status: str = "ok"                  # ok, fehler, keine_grundlage
+    fehlerklasse: Optional[str] = None  # ohne Meldung, sie kann Inhalte enthalten
 
 
 class Anbieter(Protocol):
@@ -86,7 +73,7 @@ class LokalerExtraktiverAnbieter:
 
     def erzeugen(self, prompt: str, quellen: list[Quelle], frage: str) -> str:
         original = set(tokens(frage))
-        fachbegriffe = _erweitern(original) - original  # z. B. "kosten" zu "bezahlt"
+        fachbegriffe = _erweitern(original) - original
         frage_tokens = original | fachbegriffe
         kandidaten = []
         haupt = quellen[0].quelle_id.split("-")[0] if quellen else None
@@ -122,8 +109,6 @@ class LokalerExtraktiverAnbieter:
 
 
 class OpenAIKompatiblerAnbieter:
-    """Anbindung an ein selbst gehostetes Modell mit OpenAI-kompatibler Chat-Schnittstelle."""
-
     name = "selbst-gehostet"
 
     def __init__(self, basis_url: str, modell: str, modell_version: str, api_schluessel: str = "",
@@ -183,7 +168,7 @@ class LLMGateway:
 
     def ablehnen(self, vorlage: PromptVorlage, frage: str, ausgabe: str,
                  datenstand_id: Optional[str] = None, zweck: str = "antwort") -> Protokolleintrag:
-        """Protokolliert eine Ablehnung mangels Quellen. Das Modell wird dafür nicht aufgerufen."""
+        """Protokolliert eine Ablehnung mangels Quellen, ohne das Modell aufzurufen."""
         prompt = vorlage.fuellen(quellen="", frage=frage)
         return self._protokollieren(vorlage, prompt, _h(ausgabe), [], datenstand_id, zweck, time.perf_counter(),
                                     "keine_grundlage")

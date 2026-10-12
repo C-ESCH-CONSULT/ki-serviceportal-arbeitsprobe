@@ -65,7 +65,7 @@ class PostgresSpeicher:
 
 
 class PgVectorIndex:
-    """Vektorsuche über pgvector. Wird vom Wissensspeicher genutzt, wenn eine Datenbank konfiguriert ist."""
+    """Vektorsuche über pgvector."""
 
     def __init__(self, dsn: str):
         self.dsn = dsn
@@ -98,7 +98,7 @@ class PostgresProtokoll:
 
     def __init__(self, dsn: str, basis):
         self.dsn = dsn
-        self.basis = basis  # Protokoll im Arbeitsspeicher bzw. als Datei
+        self.basis = basis
 
     @property
     def eintraege(self):

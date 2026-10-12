@@ -45,8 +45,8 @@ class ImporterTest(unittest.TestCase):
                   .replace("K01;Kommune A;Kreisstadt;34120;7,4", "K01;Kommune A;Kreisstadt;34.120;7,4")
                   .replace("K02;Kommune B;Kreisstadt;28940;8,9", "K02;Kommune B;Kreisstadt;28940;8.9"))
         stand = KennzahlenImporter("pflegestatistik", "2025-12-31").importieren(inhalt, jetzt=JETZT)
-        self.assertEqual(stand.kommunen["K01"].werte["einwohner"], 34120)  # Punkt trennt Tausender
-        self.assertNotIn("K02", stand.kommunen)                             # "8.9" ist mehrdeutig
+        self.assertEqual(stand.kommunen["K01"].werte["einwohner"], 34120)
+        self.assertNotIn("K02", stand.kommunen)
         self.assertIn(("K02", "format"), {(b.kommune_id, b.regel) for b in stand.befunde})
         self.assertEqual(_zahl("1.234,5"), 1234.5)
         for wert in ("3.58", "3.580,", "1,234.5", "1e3", "nan"):

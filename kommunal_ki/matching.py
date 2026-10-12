@@ -1,9 +1,4 @@
-"""Matching von Bedarfen einer Kommune zu passenden Maßnahmen.
-
-Kombiniert feste Regeln (Indikator, Richtung, Mindestgröße) mit semantischer Ähnlichkeit zwischen
-Bedarf und Maßnahmentext. Zu jedem Vorschlag wird angegeben, welche Kennzahlen, Regeln und Quellen
-ihn begründen.
-"""
+"""Matching von Bedarfen zu Maßnahmen: feste Regeln plus inhaltliche Ähnlichkeit."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -47,9 +42,9 @@ def vorschlagen(ergebnis: BenchmarkErgebnis, stand: Datenstand, wissen: Wissenss
             if m.richtung == richtung:
                 regel_punkte += 0.3
             if einwohner < m.min_einwohner:
-                continue  # harte Regel: Maßnahme erst ab Mindestgröße sinnvoll
+                continue
             if m.typen and ergebnis.vergleichsgruppe not in m.typen:
-                continue  # harte Regel: Maßnahme nur für bestimmte Kommunentypen
+                continue
             if regel_punkte < 0.7:
                 continue
             abschnitte = [a for a in wissen.abschnitte if a.massnahme_id == m.massnahme_id]
@@ -59,7 +54,7 @@ def vorschlagen(ergebnis: BenchmarkErgebnis, stand: Datenstand, wissen: Wissenss
                 f"{bedarf.bezeichnung}: {bedarf.wert} (Median der Gruppe {ergebnis.vergleichsgruppe}: "
                 f"{bedarf.median_gruppe}, Perzentil {bedarf.perzentil})",
                 *regeln,
-                f"Mindestgröße erfüllt ({int(einwohner)} ≥ {m.min_einwohner} Einwohner)",
+                *([f"Mindestgröße erfüllt ({int(einwohner)} ≥ {m.min_einwohner} Einwohner)"] if m.min_einwohner else []),
                 *([f"geeignet für {', '.join(m.typen)}"] if m.typen else []),
                 f"inhaltliche Nähe zum Bedarf {semantik:.2f}",
             ]

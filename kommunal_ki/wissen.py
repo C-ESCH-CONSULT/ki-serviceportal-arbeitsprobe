@@ -1,13 +1,4 @@
-"""Wissensspeicher (RAG) für die Maßnahmen- und Methodensammlung.
-
-Maßnahmen liegen als Markdown mit Kopfdaten vor. Sie werden in Abschnitte zerlegt, eingebettet und
-über Vektorsuche abgefragt. Jede Antwort nennt ihre Quellen. Liegt kein Abschnitt über der
-Mindestähnlichkeit, wird das Modell nicht aufgerufen und die Ablehnung protokolliert. Als beantwortet
-gilt eine Antwort nur, wenn sie ausschließlich vorhandene Quellen zitiert.
-
-Wie ein Datenstand hat die Sammlung eine aus dem Inhalt abgeleitete ID, die bei jeder Wissensfrage
-im Protokoll steht.
-"""
+"""Wissensspeicher (RAG) für die Maßnahmensammlung."""
 from __future__ import annotations
 
 import json
@@ -54,7 +45,7 @@ class Antwort:
     aufruf_id: str
     datenstand_id: str  # Wissensstand der Maßnahmensammlung
     beantwortet: bool
-    ungueltige_zitate: list[int]  # Quellennummern, die es nicht gibt
+    ungueltige_zitate: list[int]
 
 
 @dataclass
@@ -62,11 +53,10 @@ class Wissensspeicher:
     embedder: Embedder = field(default_factory=HashingEmbedder)
     massnahmen: dict[str, Massnahme] = field(default_factory=dict)
     abschnitte: list[Abschnitt] = field(default_factory=list)
-    index: Optional[object] = None  # externe Vektorsuche, z. B. PgVectorIndex; sonst Suche im Arbeitsspeicher
+    index: Optional[object] = None  # PgVectorIndex; ohne Index wird im Arbeitsspeicher gesucht
 
     @property
     def wissensstand_id(self) -> str:
-        """Versionsstand der Maßnahmensammlung, abgeleitet aus dem Inhalt aller Maßnahmen (wie beim Datenstand)."""
         inhalt = json.dumps([asdict(m) for _, m in sorted(self.massnahmen.items())], ensure_ascii=False, sort_keys=True)
         return f"massnahmen-{inhalt_hash(inhalt)[:10]}"
 
@@ -114,6 +104,6 @@ class Wissensspeicher:
                      for q, t in zip(quellen, treffer)],
             aufruf_id=eintrag.aufruf_id,
             datenstand_id=stand,
-            beantwortet=bool(zitiert) and not ungueltig,  # Zitat einer nicht vorhandenen Quelle zählt nicht
+            beantwortet=bool(zitiert) and not ungueltig,
             ungueltige_zitate=ungueltig,
         )

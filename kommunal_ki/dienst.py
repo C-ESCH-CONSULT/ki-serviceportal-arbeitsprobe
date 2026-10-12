@@ -1,8 +1,4 @@
-"""Fachlicher Dienst: verbindet Datenstände, Benchmark, Wissensspeicher, Matching und Gateway.
-
-Die API-Schicht ruft nur diesen Dienst auf. Dadurch lässt sich die gesamte Fachlogik ohne
-Webserver und ohne Datenbank testen.
-"""
+"""Fachlogik für API und Kommandozeile, testbar ohne Webserver und Datenbank."""
 from __future__ import annotations
 
 import os
@@ -19,6 +15,7 @@ from .speicher import DatenstandSpeicher, SpeicherImArbeitsspeicher
 from .wissen import Wissensspeicher
 
 DATEN = Path(__file__).resolve().parent.parent / "data"
+MAX_PROTOKOLLEINTRAEGE = 500
 
 
 def gateway_aus_umgebung(protokoll_datei: Optional[Path] = None) -> LLMGateway:
@@ -40,7 +37,6 @@ class Dienst:
         self.wissen = wissen or Wissensspeicher().laden(DATEN / "massnahmen")
         self.gateway = gateway or gateway_aus_umgebung()
 
-    # Datenpipeline
     def importieren(self, inhalt: str, quelle: str, stichtag: str) -> Datenstand:
         vorgaenger = self.speicher.aktuell(quelle)
         stand = KennzahlenImporter(quelle, stichtag).importieren(inhalt, vorgaenger)
@@ -53,7 +49,6 @@ class Dienst:
             raise LookupError("Kein Datenstand vorhanden")
         return stand
 
-    # Benchmark und Matching
     def benchmark(self, kommune_id: str, datenstand_id: Optional[str] = None) -> dict:
         stand = self._stand(datenstand_id)
         return asdict(einordnen(stand, kommune_id))
@@ -66,9 +61,10 @@ class Dienst:
                 "bedarfe": [asdict(b) for b in ergebnis.bedarfe],
                 "vorschlaege": [asdict(v) for v in vorschlaege]}
 
-    # Wissensfragen
     def fragen(self, frage: str, prompt_version: Optional[str] = None) -> dict:
         return asdict(self.wissen.fragen(frage, self.gateway, prompt_version=prompt_version))
 
     def protokoll(self, letzte: int = 50) -> list[dict]:
+        if not 1 <= letzte <= MAX_PROTOKOLLEINTRAEGE:
+            raise ValueError(f"letzte muss zwischen 1 und {MAX_PROTOKOLLEINTRAEGE} liegen")
         return [asdict(e) for e in self.gateway.protokoll.eintraege[-letzte:]]

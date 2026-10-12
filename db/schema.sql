@@ -32,7 +32,6 @@ CREATE TABLE IF NOT EXISTS pruefbefund (
     meldung       text NOT NULL
 );
 
--- Wissensspeicher: Abschnitte der Maßnahmensammlung mit Einbettung.
 CREATE TABLE IF NOT EXISTS wissen_abschnitt (
     abschnitt_id   text PRIMARY KEY,
     massnahme_id   text NOT NULL,
@@ -46,8 +45,7 @@ CREATE TABLE IF NOT EXISTS wissen_abschnitt (
 CREATE INDEX IF NOT EXISTS wissen_abschnitt_vektor_idx
     ON wissen_abschnitt USING hnsw (vektor vector_cosine_ops);
 
--- Protokoll jedes Modellaufrufs (ohne Inhalte, nur Hashes und Metadaten), auch fehlgeschlagener Aufrufe
--- und abgelehnter Wissensfragen, für die das Modell mangels Quellen nicht aufgerufen wurde.
+-- Protokoll der Modellaufrufe: nur Hashes und Metadaten, keine Inhalte.
 CREATE TABLE IF NOT EXISTS modellaufruf (
     aufruf_id      uuid PRIMARY KEY,
     zeitpunkt      timestamptz NOT NULL,
@@ -58,11 +56,11 @@ CREATE TABLE IF NOT EXISTS modellaufruf (
     prompt_version text NOT NULL,
     prompt_hash    text NOT NULL,
     eingabe_hash   text NOT NULL,
-    ausgabe_hash   text NOT NULL,  -- leer, wenn der Aufruf fehlgeschlagen ist
+    ausgabe_hash   text NOT NULL,
     quellen        text[] NOT NULL,
     datenstand_id  text,
     dauer_ms       int  NOT NULL,
     zweck          text NOT NULL,
     status         text NOT NULL CHECK (status IN ('ok', 'fehler', 'keine_grundlage')),
-    fehlerklasse   text            -- Name der Ausnahme, ohne Fehlermeldung
+    fehlerklasse   text
 );

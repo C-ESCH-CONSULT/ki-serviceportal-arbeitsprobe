@@ -1,8 +1,4 @@
-"""Importer für Kennzahlen-Tabellen mit Prüfregeln und versionierten Datenständen.
-
-Jede Quelle bekommt einen eigenen Importer mit festem Schema. Prüfregeln laufen pro Zeile;
-Fehler verwerfen die Zeile, Hinweise werden übernommen und im Datenstand protokolliert.
-"""
+"""Importer für Kennzahlen-Tabellen. Fehler verwerfen die Zeile, Hinweise werden übernommen."""
 from __future__ import annotations
 
 import csv
@@ -29,7 +25,6 @@ _DEUTSCHE_ZAHL = re.compile(r"-?(\d{1,3}(\.\d{3})+|\d+)(,\d+)?")
 
 
 def _zahl(text: str) -> float:
-    """Liest eine Zahl im deutschen Format. Mehrdeutiges wie '3.58' oder '7.4' wird abgelehnt."""
     text = text.strip()
     if not _DEUTSCHE_ZAHL.fullmatch(text):
         raise ValueError(text)
@@ -112,7 +107,6 @@ class KennzahlenImporter:
                 continue
             werte[name] = wert
 
-        # Plausibilität über mehrere Felder
         if "pflegebeduerftige_je_1000" in werte and "anteil_80plus_pct" in werte:
             if werte["pflegebeduerftige_je_1000"] / 10 > werte["anteil_80plus_pct"] * 3:
                 melden("plausibilitaet", "hinweis",

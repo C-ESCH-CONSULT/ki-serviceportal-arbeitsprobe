@@ -1,15 +1,15 @@
-"""REST-Schnittstelle (FastAPI). Die offene Dokumentation liegt unter /docs (OpenAPI)."""
+"""REST-Schnittstelle (FastAPI), OpenAPI-Dokumentation unter /docs."""
 from __future__ import annotations
 
 import os
 from pathlib import Path
 from typing import Optional
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Query, UploadFile
 from pydantic import BaseModel, Field
 
 from . import __version__
-from .dienst import Dienst, gateway_aus_umgebung
+from .dienst import MAX_PROTOKOLLEINTRAEGE, Dienst, gateway_aus_umgebung
 from .importer import SchemaFehler
 
 app = FastAPI(
@@ -49,7 +49,10 @@ def gesundheit() -> dict:
 
 @app.post("/importe", status_code=201)
 async def importieren(datei: UploadFile = File(...), quelle: str = Form(...), stichtag: str = Form(...)) -> dict:
-    inhalt = (await datei.read()).decode("utf-8-sig")
+    try:
+        inhalt = (await datei.read()).decode("utf-8-sig")
+    except UnicodeDecodeError as e:
+        raise HTTPException(422, "Datei ist nicht UTF-8-kodiert") from e
     try:
         stand = dienst.importieren(inhalt, quelle, stichtag)
     except SchemaFehler as e:
@@ -87,5 +90,5 @@ def fragen(eingabe: FrageEingabe) -> dict:
 
 
 @app.get("/protokoll")
-def protokoll(letzte: int = 50) -> list[dict]:
+def protokoll(letzte: int = Query(50, ge=1, le=MAX_PROTOKOLLEINTRAEGE)) -> list[dict]:
     return dienst.protokoll(letzte)

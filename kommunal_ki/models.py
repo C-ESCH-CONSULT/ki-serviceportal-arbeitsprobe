@@ -7,8 +7,6 @@ from typing import Optional
 
 @dataclass(frozen=True)
 class Kennzahl:
-    """Definition einer Kennzahl mit Prüfregeln."""
-
     name: str
     bezeichnung: str
     einheit: str
@@ -97,8 +95,6 @@ class Massnahme:
 
 @dataclass
 class Abschnitt:
-    """Textabschnitt im Wissensspeicher."""
-
     abschnitt_id: str
     massnahme_id: str
     titel: str

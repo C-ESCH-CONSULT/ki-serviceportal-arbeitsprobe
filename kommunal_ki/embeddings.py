@@ -1,10 +1,4 @@
-"""Einbettungen für die Vektorsuche.
-
-Standard ist ein deterministischer Hashing-Embedder auf Wort- und Zeichen-n-Grammen. Er läuft
-ohne Modell-Download und ohne externe Dienste und eignet sich für Tests und den lokalen Betrieb.
-Für den Produktivbetrieb kann ein selbst gehostetes Embedding-Modell über dieselbe Schnittstelle
-angebunden werden (siehe ``Embedder``).
-"""
+"""Einbettungen für die Vektorsuche. Standard ist ein Hashing-Embedder ohne Modell-Download."""
 from __future__ import annotations
 
 import hashlib

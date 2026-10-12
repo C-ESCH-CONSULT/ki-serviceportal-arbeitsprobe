@@ -1,8 +1,4 @@
-"""Versionierte Prompt-Vorlagen.
-
-Jede Änderung an einer Vorlage bekommt eine neue Version. Das Protokoll speichert ID, Version und
-Hash der verwendeten Vorlage, sodass jede Antwort auf die exakte Vorlage zurückgeführt werden kann.
-"""
+"""Versionierte Prompt-Vorlagen. Jede Änderung ergibt eine neue Version, ältere bleiben abrufbar."""
 from __future__ import annotations
 
 import hashlib
@@ -51,7 +47,7 @@ Quellen:
 Frage: {frage}
 Antwort:"""))
 
-# Ablehnungssatz aus Version 2. Wird auch ohne Modellaufruf ausgegeben, wenn keine Quelle passt.
+# Steht wörtlich in Version 2.
 KEINE_ANGABEN = "Dazu enthält die Maßnahmensammlung keine Angaben."
 
 registrieren(PromptVorlage("antwort_mit_quellen", "2", """\

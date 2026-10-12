@@ -35,6 +35,15 @@ class ApiTest(unittest.TestCase):
                              files={"datei": ("k.csv", b"kommune_id;name\nK1;A\n", "text/csv")})
         self.assertEqual(r.status_code, 422)
 
+    def test_datei_ohne_utf8_wird_abgelehnt(self):
+        r = self.client.post("/importe", data={"quelle": "x", "stichtag": "2025-12-31"},
+                             files={"datei": ("k.csv", "kommune_id;name\nK1;Müller\n".encode("latin-1"), "text/csv")})
+        self.assertEqual(r.status_code, 422)
+
+    def test_protokollabruf_ist_begrenzt(self):
+        for letzte in (0, 501):
+            self.assertEqual(self.client.get(f"/protokoll?letzte={letzte}").status_code, 422)
+
 
 if __name__ == "__main__":
     unittest.main()

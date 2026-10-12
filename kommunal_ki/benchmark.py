@@ -1,7 +1,4 @@
-"""Benchmark: Einordnung einer Kommune innerhalb ihrer Vergleichsgruppe.
-
-Berechnungen beziehen sich immer auf einen konkreten Datenstand und sind damit reproduzierbar.
-"""
+"""Einordnung einer Kommune innerhalb ihrer Vergleichsgruppe, immer bezogen auf einen Datenstand."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,7 +14,7 @@ class Einordnung:
     wert: float
     median_gruppe: float
     perzentil: float          # 0 = niedrigster Wert der Gruppe, 100 = höchster
-    abweichung_pct: float     # Abweichung vom Median in Prozent
+    abweichung_pct: float
     unguenstig: bool          # liegt im ungünstigsten Viertel der Gruppe
 
 
