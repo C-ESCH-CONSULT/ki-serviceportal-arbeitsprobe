@@ -38,7 +38,8 @@ def main() -> None:
         print(f"  [{q['nummer']}] {q['titel']} ({q['datei']}, Abschnitt {q['abschnitt_id']}, Ähnlichkeit {q['aehnlichkeit']})")
     e = d.protokoll(1)[0]
     print(f"\nProtokoll: Aufruf {e['aufruf_id']}, Modell {e['modell']} {e['modell_version']}, "
-          f"Prompt {e['prompt_id']} v{e['prompt_version']} ({e['prompt_hash']}), Quellen {', '.join(e['quellen'])}")
+          f"Prompt {e['prompt_id']} v{e['prompt_version']} ({e['prompt_hash']}), Datenstand {e['datenstand_id']}, "
+          f"Quellen {', '.join(e['quellen'])}")
 
 
 if __name__ == "__main__":

@@ -2,17 +2,20 @@
 
 Maßnahmen liegen als Markdown mit Kopfdaten vor. Sie werden in Abschnitte zerlegt, eingebettet und
 über Vektorsuche abgefragt. Jede Antwort nennt ihre Quellen. Liegt kein Abschnitt über der
-Mindestähnlichkeit, wird keine inhaltliche Antwort erzeugt.
+Mindestähnlichkeit, wird keine inhaltliche Antwort erzeugt. Wie ein Datenstand hat die Sammlung
+eine aus dem Inhalt abgeleitete ID, die bei jeder Wissensfrage im Protokoll steht.
 """
 from __future__ import annotations
 
+import json
 import re
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Optional
 
 from .embeddings import Embedder, HashingEmbedder, erweitern, kosinus, tokens
 from .gateway import LLMGateway, Quelle
+from .importer import inhalt_hash
 from .models import Abschnitt, Massnahme
 from .prompts import holen
 
@@ -46,6 +49,7 @@ class Antwort:
     text: str
     quellen: list[dict]
     aufruf_id: str
+    datenstand_id: str  # Wissensstand der Maßnahmensammlung
     beantwortet: bool
 
 
@@ -55,6 +59,12 @@ class Wissensspeicher:
     massnahmen: dict[str, Massnahme] = field(default_factory=dict)
     abschnitte: list[Abschnitt] = field(default_factory=list)
     index: Optional[object] = None  # externe Vektorsuche, z. B. PgVectorIndex; sonst Suche im Arbeitsspeicher
+
+    @property
+    def wissensstand_id(self) -> str:
+        """Versionsstand der Maßnahmensammlung, abgeleitet aus dem Inhalt aller Maßnahmen (wie beim Datenstand)."""
+        inhalt = json.dumps([asdict(m) for _, m in sorted(self.massnahmen.items())], ensure_ascii=False, sort_keys=True)
+        return f"massnahmen-{inhalt_hash(inhalt)[:10]}"
 
     def laden(self, ordner: Path) -> "Wissensspeicher":
         for pfad in sorted(ordner.glob("*.md")):
@@ -83,7 +93,8 @@ class Wissensspeicher:
         quellen = [Quelle(i + 1, t.abschnitt.abschnitt_id, t.abschnitt.titel, t.abschnitt.text)
                    for i, t in enumerate(treffer)]
         vorlage = holen("antwort_mit_quellen", prompt_version)
-        text, eintrag = gateway.aufrufen(vorlage, frage, quellen, zweck="wissensfrage")
+        stand = self.wissensstand_id
+        text, eintrag = gateway.aufrufen(vorlage, frage, quellen, datenstand_id=stand, zweck="wissensfrage")
         zitiert = {int(n) for n in re.findall(r"\[(\d+)\]", text)}
         return Antwort(
             frage=frage,
@@ -93,5 +104,6 @@ class Wissensspeicher:
                       "aehnlichkeit": round(t.aehnlichkeit, 3), "zitiert": q.nummer in zitiert}
                      for q, t in zip(quellen, treffer)],
             aufruf_id=eintrag.aufruf_id,
+            datenstand_id=stand,
             beantwortet=bool(zitiert),
         )

@@ -1,6 +1,7 @@
 import json
 import tempfile
 import unittest
+from dataclasses import replace
 from pathlib import Path
 
 from kommunal_ki.gateway import LLMGateway, LokalerExtraktiverAnbieter, Protokoll
@@ -79,6 +80,16 @@ class WissenTest(unittest.TestCase):
         self.assertEqual(eintrag["quellen"], [q["abschnitt_id"] for q in a.quellen])
         self.assertEqual(eintrag["status"], "ok")
         self.assertNotIn("Pflegekurse", json.dumps(eintrag))  # keine Inhalte im Protokoll
+
+    def test_wissensstand_steht_im_protokoll(self):
+        gw = self.neues_gateway()
+        a = self.wissen.fragen("Wer bezahlt Pflegekurse für Angehörige?", gw)
+        self.assertEqual(gw.protokoll.eintraege[-1].datenstand_id, a.datenstand_id)
+        self.assertEqual(Wissensspeicher().laden(DATEN / "massnahmen").wissensstand_id, a.datenstand_id)
+        geaendert = Wissensspeicher()
+        for m in self.wissen.massnahmen.values():
+            geaendert.hinzufuegen(replace(m, text=m.text + " Neu.") if m.massnahme_id == "M01" else m)
+        self.assertNotEqual(geaendert.wissensstand_id, a.datenstand_id)
 
     def test_fehlgeschlagener_aufruf_wird_protokolliert(self):
         gw = LLMGateway(FesterAnbieter(fehler=TimeoutError("Zeitlimit überschritten")))
