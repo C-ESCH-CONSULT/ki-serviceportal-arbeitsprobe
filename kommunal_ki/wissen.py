@@ -2,8 +2,11 @@
 
 Maßnahmen liegen als Markdown mit Kopfdaten vor. Sie werden in Abschnitte zerlegt, eingebettet und
 über Vektorsuche abgefragt. Jede Antwort nennt ihre Quellen. Liegt kein Abschnitt über der
-Mindestähnlichkeit, wird keine inhaltliche Antwort erzeugt. Wie ein Datenstand hat die Sammlung
-eine aus dem Inhalt abgeleitete ID, die bei jeder Wissensfrage im Protokoll steht.
+Mindestähnlichkeit, wird das Modell nicht aufgerufen und die Ablehnung protokolliert. Als beantwortet
+gilt eine Antwort nur, wenn sie ausschließlich vorhandene Quellen zitiert.
+
+Wie ein Datenstand hat die Sammlung eine aus dem Inhalt abgeleitete ID, die bei jeder Wissensfrage
+im Protokoll steht.
 """
 from __future__ import annotations
 
@@ -17,7 +20,7 @@ from .embeddings import Embedder, HashingEmbedder, erweitern, kosinus, tokens
 from .gateway import LLMGateway, Quelle
 from .importer import inhalt_hash
 from .models import Abschnitt, Massnahme
-from .prompts import holen
+from .prompts import KEINE_ANGABEN, holen
 
 MINDEST_AEHNLICHKEIT = 0.12
 
@@ -51,6 +54,7 @@ class Antwort:
     aufruf_id: str
     datenstand_id: str  # Wissensstand der Maßnahmensammlung
     beantwortet: bool
+    ungueltige_zitate: list[int]  # Quellennummern, die es nicht gibt
 
 
 @dataclass
@@ -90,12 +94,17 @@ class Wissensspeicher:
 
     def fragen(self, frage: str, gateway: LLMGateway, k: int = 3, prompt_version: Optional[str] = None) -> Antwort:
         treffer = [t for t in self.suchen(frage, k) if t.aehnlichkeit >= MINDEST_AEHNLICHKEIT]
-        quellen = [Quelle(i + 1, t.abschnitt.abschnitt_id, t.abschnitt.titel, t.abschnitt.text)
-                   for i, t in enumerate(treffer)]
         vorlage = holen("antwort_mit_quellen", prompt_version)
         stand = self.wissensstand_id
+        if not treffer:
+            eintrag = gateway.ablehnen(vorlage, frage, KEINE_ANGABEN, datenstand_id=stand, zweck="wissensfrage")
+            return Antwort(frage=frage, text=KEINE_ANGABEN, quellen=[], aufruf_id=eintrag.aufruf_id,
+                           datenstand_id=stand, beantwortet=False, ungueltige_zitate=[])
+        quellen = [Quelle(i + 1, t.abschnitt.abschnitt_id, t.abschnitt.titel, t.abschnitt.text)
+                   for i, t in enumerate(treffer)]
         text, eintrag = gateway.aufrufen(vorlage, frage, quellen, datenstand_id=stand, zweck="wissensfrage")
         zitiert = {int(n) for n in re.findall(r"\[(\d+)\]", text)}
+        ungueltig = sorted(n for n in zitiert if not 1 <= n <= len(quellen))
         return Antwort(
             frage=frage,
             text=text,
@@ -105,5 +114,6 @@ class Wissensspeicher:
                      for q, t in zip(quellen, treffer)],
             aufruf_id=eintrag.aufruf_id,
             datenstand_id=stand,
-            beantwortet=bool(zitiert),
+            beantwortet=bool(zitiert) and not ungueltig,  # Zitat einer nicht vorhandenen Quelle zählt nicht
+            ungueltige_zitate=ungueltig,
         )

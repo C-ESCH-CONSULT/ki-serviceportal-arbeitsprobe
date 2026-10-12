@@ -3,7 +3,8 @@
 Alle Aufrufe laufen über ``LLMGateway.aufrufen``. Pro Aufruf werden Anbieter, Modell, Modellversion,
 Prompt-ID, Prompt-Version und -Hash, die verwendeten Quellen, der Datenstand sowie Hashes von Eingabe
 und Ausgabe protokolliert. Inhalte selbst werden nicht im Protokoll gespeichert (Datensparsamkeit).
-Auch fehlgeschlagene Aufrufe werden protokolliert, mit Status und Fehlerklasse.
+Auch fehlgeschlagene Aufrufe werden protokolliert, mit Status und Fehlerklasse. Steht eine Antwort ohne
+Modell fest, weil keine passende Quelle vorliegt, protokolliert ``LLMGateway.ablehnen`` das ebenfalls.
 
 Anbieter:
 * ``LokalerExtraktiverAnbieter``: läuft ohne Modell, bildet Antworten aus Sätzen der Quellen.
@@ -25,7 +26,7 @@ from pathlib import Path
 from typing import Optional, Protocol
 
 from .embeddings import erweitern as _erweitern, tokens
-from .prompts import PromptVorlage
+from .prompts import KEINE_ANGABEN, PromptVorlage
 
 
 def _h(text: str) -> str:
@@ -56,7 +57,7 @@ class Protokolleintrag:
     datenstand_id: Optional[str]
     dauer_ms: int
     zweck: str
-    status: str = "ok"                  # "ok" oder "fehler"
+    status: str = "ok"                  # "ok", "fehler" oder "keine_grundlage" (Modell nicht aufgerufen)
     fehlerklasse: Optional[str] = None  # nur der Name der Ausnahme; die Meldung kann Inhalte enthalten
 
 
@@ -106,7 +107,7 @@ class LokalerExtraktiverAnbieter:
                           + (0.2 if pos == 0 else 0.0) - fremd_abzug)
                 kandidaten.append((punkte, -q.nummer, satz, q.nummer))
         if not kandidaten:
-            return "Dazu enthält die Maßnahmensammlung keine Angaben."
+            return KEINE_ANGABEN
         kandidaten.sort(reverse=True)
         beste = kandidaten[0][0]
         gewaehlt, gesehen = [], set()
@@ -179,6 +180,13 @@ class LLMGateway:
             self._protokollieren(vorlage, prompt, "", quellen, datenstand_id, zweck, start, "fehler", type(e).__name__)
             raise
         return ausgabe, self._protokollieren(vorlage, prompt, _h(ausgabe), quellen, datenstand_id, zweck, start)
+
+    def ablehnen(self, vorlage: PromptVorlage, frage: str, ausgabe: str,
+                 datenstand_id: Optional[str] = None, zweck: str = "antwort") -> Protokolleintrag:
+        """Protokolliert eine Ablehnung mangels Quellen. Das Modell wird dafür nicht aufgerufen."""
+        prompt = vorlage.fuellen(quellen="", frage=frage)
+        return self._protokollieren(vorlage, prompt, _h(ausgabe), [], datenstand_id, zweck, time.perf_counter(),
+                                    "keine_grundlage")
 
     def _protokollieren(self, vorlage: PromptVorlage, prompt: str, ausgabe_hash: str, quellen: list[Quelle],
                         datenstand_id: Optional[str], zweck: str, start: float, status: str = "ok",

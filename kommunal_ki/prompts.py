@@ -51,6 +51,9 @@ Quellen:
 Frage: {frage}
 Antwort:"""))
 
+# Ablehnungssatz aus Version 2. Wird auch ohne Modellaufruf ausgegeben, wenn keine Quelle passt.
+KEINE_ANGABEN = "Dazu enthält die Maßnahmensammlung keine Angaben."
+
 registrieren(PromptVorlage("antwort_mit_quellen", "2", """\
 Du unterstützt Mitarbeitende von Kommunen. Beantworte die Frage sachlich und knapp,
 ausschließlich auf Grundlage der nummerierten Quellen. Nenne nach jeder Aussage die Quelle

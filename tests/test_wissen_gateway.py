@@ -5,7 +5,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from kommunal_ki.gateway import LLMGateway, LokalerExtraktiverAnbieter, Protokoll
-from kommunal_ki.prompts import holen
+from kommunal_ki.prompts import KEINE_ANGABEN, holen
 from kommunal_ki.wissen import Wissensspeicher
 
 DATEN = Path(__file__).resolve().parent.parent / "data"
@@ -65,6 +65,24 @@ class WissenTest(unittest.TestCase):
             with self.subTest(frage=frage):
                 self.assertFalse(a.beantwortet)
                 self.assertIn("keine Angaben", a.text)
+
+    def test_ohne_grundlage_wird_kein_modell_aufgerufen(self):
+        anbieter = FesterAnbieter("Erfundene Antwort. [1]")
+        gw = LLMGateway(anbieter)
+        a = self.wissen.fragen("Wie beantrage ich einen Reisepass?", gw)
+        self.assertEqual(anbieter.aufrufe, 0)
+        self.assertEqual((a.text, a.quellen, a.beantwortet), (KEINE_ANGABEN, [], False))
+        e = gw.protokoll.eintraege[-1]
+        self.assertEqual((e.aufruf_id, e.status, e.quellen), (a.aufruf_id, "keine_grundlage", []))
+        self.assertIn(KEINE_ANGABEN, holen("antwort_mit_quellen", "2").text)
+
+    def test_ungueltige_zitate_gelten_nicht_als_antwort(self):
+        for ausgabe in ("Die Kosten trägt das Land. [4]", "Nötig sind Räume. [1] Die Kosten trägt das Land. [4]"):
+            a = self.wissen.fragen("Was braucht man für einen Pflegestützpunkt?", LLMGateway(FesterAnbieter(ausgabe)))
+            with self.subTest(ausgabe=ausgabe):
+                self.assertEqual(len(a.quellen), 3)
+                self.assertFalse(a.beantwortet)
+                self.assertEqual(a.ungueltige_zitate, [4])
 
     def test_protokoll_enthaelt_versionen_und_quellen(self):
         with tempfile.TemporaryDirectory() as tmp:

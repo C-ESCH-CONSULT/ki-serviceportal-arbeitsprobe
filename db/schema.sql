@@ -46,7 +46,8 @@ CREATE TABLE IF NOT EXISTS wissen_abschnitt (
 CREATE INDEX IF NOT EXISTS wissen_abschnitt_vektor_idx
     ON wissen_abschnitt USING hnsw (vektor vector_cosine_ops);
 
--- Protokoll jedes Modellaufrufs (ohne Inhalte, nur Hashes und Metadaten), auch fehlgeschlagener Aufrufe.
+-- Protokoll jedes Modellaufrufs (ohne Inhalte, nur Hashes und Metadaten), auch fehlgeschlagener Aufrufe
+-- und abgelehnter Wissensfragen, für die das Modell mangels Quellen nicht aufgerufen wurde.
 CREATE TABLE IF NOT EXISTS modellaufruf (
     aufruf_id      uuid PRIMARY KEY,
     zeitpunkt      timestamptz NOT NULL,
@@ -62,6 +63,6 @@ CREATE TABLE IF NOT EXISTS modellaufruf (
     datenstand_id  text,
     dauer_ms       int  NOT NULL,
     zweck          text NOT NULL,
-    status         text NOT NULL CHECK (status IN ('ok', 'fehler')),
+    status         text NOT NULL CHECK (status IN ('ok', 'fehler', 'keine_grundlage')),
     fehlerklasse   text            -- Name der Ausnahme, ohne Fehlermeldung
 );
